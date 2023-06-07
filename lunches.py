@@ -7,27 +7,43 @@ from geopy.geocoders import Nominatim
 import sys
 import geocoder
 from deep_translator import MyMemoryTranslator
+import argparse
 
-def print_help():
-    print("Usage: python3 lunch.py [ADDRESS] [LANGUAGE]")
-    print("ADDRESS: The address near where you want to find restaurants. If omitted, IP-based geolocation will be used.")
-    print("LANGUAGE: The language in which you want the menu translated. Defaults to English if not specified.")
+
+#def translate_text(text, target_language):
+#    try:
+#        translation = MyMemoryTranslator(source='finnish', target=target_language).translate(text)
+#    except:
+#        translation = text  # If translation fails, just use the original text
+#    return translation
 
 def translate_text(text, target_language):
     try:
         translation = MyMemoryTranslator(source='finnish', target=target_language).translate(text)
-    except:
-        translation = text  # If translation fails, just use the original text
-    return translation
+        return translation
+    except Exception as e:
+        print(f"Error in translation: {str(e)}")
+        sys.exit()
 
 try:
-    # if the first argument is --help or -h, print the help menu
-    if sys.argv[1] in ["--help", "-h"]:
-        print_help()
+    parser = argparse.ArgumentParser(description="Get lunch menus from restaurants near a given location, translated into a given language.")
+    parser.add_argument('-s', '--street', help='The street name of the location.')
+    parser.add_argument('-l', '--language', default='english', help='The language in which you want the menu translated. Defaults to English if not specified.')
+    parser.add_argument('-a', '--auto', action='store_true', help='Auto detect location based on IP.')
+    parser.add_argument('-d', '--default', action='store_true', help='Run with default settings.')
+
+    args = parser.parse_args()
+
+    if args.default:
+        args.auto = True
+        args.language = 'english'
+
+    if not args.street and not args.auto:
+        parser.print_help()
         sys.exit(0)
 
-    place = sys.argv[1] if len(sys.argv) > 1 else geocoder.ip('me').latlng  # use the first argument for place, if provided, else use geolocation based on IP
-    target_language = sys.argv[2] if len(sys.argv) > 2 else 'english'  # use the second argument for target language, if provided
+    place = args.street if args.street else geocoder.ip('me').latlng  # use the street for place, if provided, else use geolocation based on IP
+    target_language = args.language  # use the language provided
 
     geolocator = Nominatim(user_agent="MyApp")
     location = geolocator.geocode(place)
@@ -58,7 +74,8 @@ try:
                     print(f"{i.text} (translated: {translation})")
             print('\n')
 
-except IndexError as err:
-    print("Error: An error occurred. Run 'python3 lunch.py --help' for usage information.")
-except AttributeError as err2:
-    print("No restaurants found for given location"
+except KeyboardInterrupt:
+    print('\nExecution interrupted by user. Goodbye!')
+    sys.exit(0)
+except Exception as err:
+    print(f"Error: An error occurred. {err}")
