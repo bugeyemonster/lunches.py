@@ -1,3 +1,7 @@
-beautifulsoup4==4.12.2
-geopy==2.3.0
-Requests==2.31.0
+requests
+beautifulsoup4
+datetime
+geopy
+sys
+geocoder
+deep_translator
